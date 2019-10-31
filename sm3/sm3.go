@@ -5,19 +5,6 @@ import (
 	"math/bits"
 )
 
-var (
-	// GB/T 32907 4.1 初始值
-	iv = [8]uint32{
-		0x7380166f,
-		0x4914b2b9,
-		0x172442d7,
-		0xda8a0600,
-		0xa96f30bc,
-		0x163138aa,
-		0xe38dee4d,
-		0xb0fb0e4e}
-)
-
 const SIZE = 32
 const BLOCKSIZE = 64
 
@@ -69,6 +56,15 @@ func (c *context) Write(buf []byte) (count int, err error) {
 // -----------------------------------------------------------------------------
 // GB/T 32907 4
 // -----------------------------------------------------------------------------
+var iv = [8]uint32{
+	0x7380166f,
+	0x4914b2b9,
+	0x172442d7,
+	0xda8a0600,
+	0xa96f30bc,
+	0x163138aa,
+	0xe38dee4d,
+	0xb0fb0e4e}
 
 // t 4.2
 func t(j int) uint32 {
@@ -89,13 +85,20 @@ func ff(j int, x, y, z uint32) uint32 {
 }
 
 // gg 4.3
+func gg(j int, x, y, z uint32) uint32 {
+	if j >= 16 {
+		return ((x & y) | ((^x) & z))
+	} else {
+		return x ^ y ^ z
+	}
+}
 
-// p0
+// p0 4.4
 func p0(x uint32) uint32 {
 	return x ^ bits.RotateLeft32(x, 9) ^ bits.RotateLeft32(x, 17)
 }
 
-// p1
+// p1 4.4
 func p1(x uint32) uint32 {
 	return x ^ bits.RotateLeft32(x, 15) ^ bits.RotateLeft32(x, 23)
 }
