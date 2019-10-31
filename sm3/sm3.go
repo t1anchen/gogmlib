@@ -22,21 +22,7 @@ const SIZE = 32
 const BLOCKSIZE = 64
 
 // -----------------------------------------------------------------------------
-// GB/T 32907 4.4 置换函数
-// -----------------------------------------------------------------------------
-
-// p0
-func p0(x uint32) uint32 {
-	return x ^ bits.RotateLeft32(x, 9) ^ bits.RotateLeft32(x, 17)
-}
-
-// p1
-func p1(x uint32) uint32 {
-	return x ^ bits.RotateLeft32(x, 15) ^ bits.RotateLeft32(x, 23)
-}
-
-// -----------------------------------------------------------------------------
-// GB/T 32907 5 算法描述
+// golang/hash/Hash 接口
 // -----------------------------------------------------------------------------
 
 // Digest 杂凑过程上下文
@@ -64,10 +50,6 @@ func (c *context) Sum(b []byte) []byte {
 	return append(b, checkSum[:]...)
 }
 
-func (c *context) computeSum() [SIZE]byte {
-	return [SIZE]byte{0}
-}
-
 // Size 实现 Hash 接口中的 Size 函数
 func (c *context) Size() int {
 	return SIZE
@@ -82,4 +64,51 @@ func (c *context) BlockSize() int {
 func (c *context) Write(buf []byte) (count int, err error) {
 	count = len(buf)
 	return
+}
+
+// -----------------------------------------------------------------------------
+// GB/T 32907 4
+// -----------------------------------------------------------------------------
+
+// t 4.2
+func t(j int) uint32 {
+	if j >= 16 {
+		return 0x7a879d8a
+	} else {
+		return 0x79cc4519
+	}
+}
+
+// ff 4.3
+func ff(j int, x, y, z uint32) uint32 {
+	if j >= 16 {
+		return ((x | y) & (x | z) & (y | z))
+	} else {
+		return x ^ y ^ z
+	}
+}
+
+// gg 4.3
+
+// p0
+func p0(x uint32) uint32 {
+	return x ^ bits.RotateLeft32(x, 9) ^ bits.RotateLeft32(x, 17)
+}
+
+// p1
+func p1(x uint32) uint32 {
+	return x ^ bits.RotateLeft32(x, 15) ^ bits.RotateLeft32(x, 23)
+}
+
+// -----------------------------------------------------------------------------
+// GB/T 32907 5
+// -----------------------------------------------------------------------------
+
+// padding GB/T 32907 5.1
+func (c *context) padding(message []byte) error {
+	return nil
+}
+
+func (c *context) computeSum() [SIZE]byte {
+	return [SIZE]byte{0}
 }

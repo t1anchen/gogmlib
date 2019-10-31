@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+// VERSION 主程序的版本
 const VERSION = "1.0.0"
 
 func main() {
