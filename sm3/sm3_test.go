@@ -81,7 +81,7 @@ func TestPaddingExample1(t *testing.T) {
 	actual := Padding(input)
 	t.Logf("TestPaddingExample1:actual = %x", actual)
 
-	if bytes.Compare(actual, expected) != 0 {
+	if bytes.Equal(actual, expected) != true {
 		t.Errorf(`TestPaddingExample1失败
 期望值=%x
 实际值=%x`, expected, actual)
@@ -182,7 +182,7 @@ func TestPaddingExample2(t *testing.T) {
 	actual := Padding(input)
 	t.Logf("TestPaddingExample2:actual = %x", actual)
 
-	if bytes.Compare(actual, expected) != 0 {
+	if bytes.Equal(actual, expected) != true {
 		t.Errorf(`TestPaddingExample2失败
 期望值=%x
 实际值=%x`, expected, actual)
@@ -294,7 +294,7 @@ actualWpStr=%s`, expectedWpStrSecondBlock, actualWpStrSecondBlock)
 func TestChecksumExample2(t *testing.T) {
 	input := example2MsgInput
 	ctx := NewContext()
-	actual := ctx.ComputeFromBytes(input).ToWords()
+	actual := ctx.Init().ComputeFromBytes(input).ToWords()
 	actualStr := fmt.Sprintf("%x", actual)
 
 	expected := []uint32{
@@ -310,7 +310,7 @@ func TestChecksumExample2(t *testing.T) {
 
 	expectedBytes := utils.WordsToBytes(expected)
 	actualBytes := ctx.ToBytes()
-	if bytes.Compare(actualBytes, expectedBytes) != 0 {
+	if bytes.Equal(actualBytes, expectedBytes) != true {
 		t.Errorf(`TestChecksumExample1失败
 期望值=%x
 实际值=%x`, expectedBytes, actualBytes)

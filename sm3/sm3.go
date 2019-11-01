@@ -15,9 +15,8 @@ import (
 
 // Context 杂凑过程上下文
 type Context struct {
-	state    [8]uint32
-	bitCount uint64 // GB/T 32905 5.1 l < 2**64
-	buffer   [16]uint32
+	state  [8]uint32
+	buffer [16]uint32
 }
 
 // -----------------------------------------------------------------------------
@@ -86,10 +85,12 @@ func NewContext() *Context {
 }
 
 // Init 5.1
-func (ctx *Context) Init() {
+func (ctx *Context) Init() *Context {
 	for i := 0; i < 8; i++ {
 		ctx.state[i] = iv[i]
 	}
+	ctx.buffer = [16]uint32{0}
+	return ctx
 }
 
 // Padding 5.2 填充
@@ -165,7 +166,6 @@ func (ctx *Context) ComputeFromBytes(message []byte) *Context {
 		w  [68]uint32
 		wp [64]uint32
 	)
-	ctx.Init()
 	padded := bytes.NewBuffer(Padding(message))
 	blockBuf := bytes.NewBuffer(padded.Next(64))
 	for blockBuf.Len() > 0 {
@@ -175,6 +175,11 @@ func (ctx *Context) ComputeFromBytes(message []byte) *Context {
 		blockBuf = bytes.NewBuffer(padded.Next(64))
 	}
 	return ctx
+}
+
+// ComputeFromString 以 string 输入
+func (ctx *Context) ComputeFromString(s string) *Context {
+	return ctx.ComputeFromBytes([]byte(s))
 }
 
 // ComputeFromWords 以 Word 输入

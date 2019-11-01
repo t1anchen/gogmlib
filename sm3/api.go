@@ -37,6 +37,6 @@ func (ctx *Context) BlockSize() int {
 
 // Write 实现 Hash 接口中 io.Writer 接口的 Write 函数
 func (ctx *Context) Write(newChunk []byte) (int, error) {
-	written := ctx.Sum(newChunk)
-	return len(written), nil
+	ctx.ComputeFromBytes(newChunk)
+	return len(newChunk), nil
 }
