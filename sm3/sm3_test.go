@@ -93,7 +93,7 @@ func TestContextMessageExpansionExample1(t *testing.T) {
 		w  [68]uint32
 		wp [64]uint32
 	)
-	ctx := Init()
+	ctx := NewContext()
 	input := example1MsgInput
 	padded := bytes.NewBuffer(Padding(input))
 	blockBuf := bytes.NewBuffer(padded.Next(64))
@@ -145,23 +145,23 @@ actualWpStr=%s`, expectedWpStr, actualWpStr)
 }
 
 // TestChecksumExample1 A.1 杂凑值
-// func TestChecksumExample1(t *testing.T) {
-// 	buf := new(bytes.Buffer)
-// 	binary.Write(buf, binary.BigEndian, []byte("abc"))
-// 	actual := Checksum(buf.Bytes())
+func TestChecksumExample1(t *testing.T) {
+	input := example1MsgInput
+	actual := NewContext().ComputeFromBytes(input).ToWords()
+	actualStr := fmt.Sprintf("%x", actual)
 
-// 	expectedBuffer := new(bytes.Buffer)
-// 	binary.Write(expectedBuffer, binary.BigEndian, []uint32{
-// 		0x66c7f0f4, 0x62eeedd9, 0xd1f2d46b, 0xdc10e4e2, 0x4167c487, 0x5cf2f7a2, 0x297da02b, 0x8f4ba8e0})
-// 	expected := expectedBuffer.Bytes()
+	expected := []uint32{
+		0x66c7f0f4, 0x62eeedd9, 0xd1f2d46b, 0xdc10e4e2,
+		0x4167c487, 0x5cf2f7a2, 0x297da02b, 0x8f4ba8e0}
+	expectedStr := fmt.Sprintf("%x", expected)
 
-// 	if bytes.Compare(expected, actual) != 0 {
-// 		t.Errorf(`sm3:TestChecksum失败
-// 期望值=%x
-// 实际值=%x`, expected, actual)
-// 	}
+	if actualStr != expectedStr {
+		t.Errorf(`TestChecksumExample1失败
+期望值=%s
+实际值=%s`, expectedStr, actualStr)
+	}
 
-// }
+}
 
 // TestPaddingExample2 A.2 填充后的信息
 func TestPaddingExample2(t *testing.T) {
@@ -194,7 +194,7 @@ func TestContextMessageExpansionExample2(t *testing.T) {
 		w  [68]uint32
 		wp [64]uint32
 	)
-	ctx := Init()
+	ctx := NewContext()
 	input := example2MsgInput
 	padded := bytes.NewBuffer(Padding(input))
 	blockBuf := bytes.NewBuffer(padded.Next(64))
@@ -290,44 +290,32 @@ actualWpStr=%s`, expectedWpStrSecondBlock, actualWpStrSecondBlock)
 
 }
 
-// TestChecksumExample1 A.2
-// func TestChecksumExample2(t *testing.T) {
-// 	buf := new(bytes.Buffer)
-// 	binary.Write(buf, binary.BigEndian, []uint32{
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364,
-// 		0x61626364})
-// 	actual := Checksum(buf.Bytes())
+// TestChecksumExample1 A.2 杂凑值
+func TestChecksumExample2(t *testing.T) {
+	input := example2MsgInput
+	ctx := NewContext()
+	actual := ctx.ComputeFromBytes(input).ToWords()
+	actualStr := fmt.Sprintf("%x", actual)
 
-// 	expectedBuffer := new(bytes.Buffer)
-// 	binary.Write(expectedBuffer, binary.BigEndian, []uint32{
-// 		0xdebe9ff9,
-// 		0x2275b8a1,
-// 		0x38604889,
-// 		0xc18e5a4d,
-// 		0x6fdb70e5,
-// 		0x387e5765,
-// 		0x293dcba3,
-// 		0x9c0c5732})
-// 	expected := expectedBuffer.Bytes()
+	expected := []uint32{
+		0xdebe9ff9, 0x2275b8a1, 0x38604889, 0xc18e5a4d,
+		0x6fdb70e5, 0x387e5765, 0x293dcba3, 0x9c0c5732}
+	expectedStr := fmt.Sprintf("%x", expected)
 
-// 	if bytes.Compare(expected, actual) != 0 {
-// 		t.Errorf(`sm3:TestChecksum失败
-// 期望值=%x
-// 实际值=%x`, expected, actual)
-// 	}
+	if actualStr != expectedStr {
+		t.Errorf(`TestChecksumExample1失败
+期望值=%s
+实际值=%s`, expectedStr, actualStr)
+	}
 
-// }
+	expectedBytes := utils.WordsToBytes(expected)
+	actualBytes := ctx.ToBytes()
+	if bytes.Compare(actualBytes, expectedBytes) != 0 {
+		t.Errorf(`TestChecksumExample1失败
+期望值=%x
+实际值=%x`, expectedBytes, actualBytes)
+	}
+
+	t.Logf(`TestChecksumExample2:actualHexStr = %s`, ctx.ToHexString())
+
+}
