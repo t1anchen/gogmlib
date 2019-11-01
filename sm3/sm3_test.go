@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"testing"
+
+	"github.com/t1anchen/gogmlib/utils"
 )
 
 var (
@@ -44,7 +46,7 @@ func TestContextReset(t *testing.T) {
 		0x163138aa,
 		0xe38dee4d,
 		0xb0fb0e4e}
-	actual := c.hash
+	actual := c.state
 	if actual != expected {
 		t.Errorf(`sm3:TestContextReset失败
 期望值=%v
@@ -59,46 +61,21 @@ func TestContextReset(t *testing.T) {
 
 // TestContextPaddingExample1 A.1 填充后的信息
 func TestContextPaddingExample1(t *testing.T) {
-	c := Context{
-		iv,
-		24,
-		[16]uint32{},
-		[]byte("abc"),
-	}
-	expectedLen := 64
+	input := []byte("abc")
+	t.Logf("TestContextPaddingExample1:input = %x", input)
 
-	expectedBuf := new(bytes.Buffer)
-	binary.Write(expectedBuf, binary.BigEndian, []uint32{
-		0x61626380,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000018})
-	expected := expectedBuf.Bytes()
-	actual, err := c.Padding()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	expected := utils.WordsToBytes([]uint32{
+		0x61626380, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000018})
+	t.Logf("TestContextPaddingExample1:expected = %x", expected)
 
-	if expectedLen != len(actual) {
-		t.Errorf(`sm3:TestContextPadding失败
-期望值长度=%d
-实际值长度=%d`, expectedLen, len(actual))
-	}
+	actual := Padding(input)
+	t.Logf("TestContextPaddingExample1:actual = %x", actual)
 
-	if bytes.Compare(expected, actual) != 0 {
-		t.Errorf(`sm3:TestContextPadding失败
+	if bytes.Compare(actual, expected) != 0 {
+		t.Errorf(`TestContextPaddingExample1失败
 期望值=%x
 实际值=%x`, expected, actual)
 	}
@@ -125,86 +102,65 @@ func TestChecksumExample1(t *testing.T) {
 
 // TestContextPaddingExample2 A.2 填充后的信息
 func TestContextPaddingExample2(t *testing.T) {
-	inputBuf := new(bytes.Buffer)
-	binary.Write(inputBuf, binary.BigEndian, []uint32{
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364})
-	input := inputBuf.Bytes()
+	input := utils.WordsToBytes([]uint32{
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364})
+	t.Logf("TestContextPaddingExample2:input = %x", input)
 
-	c := Context{
-		iv,
-		uint64(len(input) * 8),
-		[16]uint32{},
-		input,
-	}
+	expected := utils.WordsToBytes([]uint32{
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x80000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000200})
+	t.Logf("TestContextPaddingExample2:expected = %x", expected)
 
-	expectedBuf := new(bytes.Buffer)
-	binary.Write(expectedBuf, binary.BigEndian, []uint32{
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x61626364,
-		0x80000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000000,
-		0x00000200})
-	expected := expectedBuf.Bytes()
-	expectedLen := len(expected)
+	actual := Padding(input)
+	t.Logf("TestContextPaddingExample2:actual = %x", actual)
 
-	actual, err := c.Padding()
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	if expectedLen != len(actual) {
-		t.Errorf(`sm3:TestContextPadding失败
-期望值长度=%d
-实际值长度=%d`, expectedLen, len(actual))
-	}
-
-	if bytes.Compare(expected, actual) != 0 {
-		t.Errorf(`sm3:TestContextPadding失败
+	if bytes.Compare(actual, expected) != 0 {
+		t.Errorf(`TestContextPaddingExample2失败
 期望值=%x
 实际值=%x`, expected, actual)
 	}
+
+	// 	inputBuf := new(bytes.Buffer)
+	// 	binary.Write(inputBuf, binary.BigEndian,
+	// 	input := inputBuf.Bytes()
+
+	// 	c := Context{
+	// 		iv,
+	// 		uint64(len(input) * 8),
+	// 		[16]uint32{},
+	// 		//input,
+	// 	}
+
+	// 	expectedBuf := new(bytes.Buffer)
+	// 	binary.Write(expectedBuf, binary.BigEndian,
+	// 	expected := expectedBuf.Bytes()
+	// 	expectedLen := len(expected)
+
+	// 	actual, err := c.Padding()
+	// 	if err != nil {
+	// 		t.Error(err.Error())
+	// 	}
+
+	// 	if expectedLen != len(actual) {
+	// 		t.Errorf(`sm3:TestContextPadding失败
+	// 期望值长度=%d
+	// 实际值长度=%d`, expectedLen, len(actual))
+	// 	}
+
+	// 	if bytes.Compare(expected, actual) != 0 {
+	// 		t.Errorf(`sm3:TestContextPadding失败
+	// 期望值=%x
+	// 实际值=%x`, expected, actual)
+	// 	}
 }
 
 // TestChecksumExample1 A.2
