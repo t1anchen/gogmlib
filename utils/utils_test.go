@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 )
@@ -47,4 +48,19 @@ expected=%s
 actual=%s`, expectedStr, actualStr)
 	}
 
+}
+
+func TestBytesConcat(t *testing.T) {
+	inputA := []byte("abc")
+	inputB := []byte("賞燈")
+	inputC := []byte("焼き鳥")
+
+	expected := []byte("abc賞燈焼き鳥")
+	actual := BytesConcat(inputA, inputB, inputC)
+
+	if bytes.Equal(actual, expected) != true {
+		t.Errorf(`utils:TestBytesConcat
+expected=%s
+actual=%s`, expected, actual)
+	}
 }

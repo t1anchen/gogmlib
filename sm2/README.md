@@ -13,6 +13,8 @@
   - [在知乎上的讨论](https://zhuanlan.zhihu.com/p/59273695)
   - [相关github repo](https://github.com/GoldSaintEagle/ECDSA-SM2-Signing-Attack)
 
+- [RFC Draft OSCCA CFRG SM2](https://tools.ietf.org/html/draft-shen-sm2-ecdsa-02)
+
 ## 参考和引用
 
 - 全国信息安全标准化技术委员会. (2017). *GB/T 32918.5-2017 信息安全技术 SM2椭圆

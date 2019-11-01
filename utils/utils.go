@@ -27,3 +27,11 @@ func BytesTo14Words(stream []byte) [14]uint32 {
 	binary.Read(buf, binary.BigEndian, &ans)
 	return ans
 }
+
+func BytesConcat(a ...[]byte) []byte {
+	buf := new(bytes.Buffer)
+	for _, x := range a {
+		buf.Write(x)
+	}
+	return buf.Bytes()
+}
