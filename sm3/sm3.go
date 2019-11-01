@@ -95,6 +95,15 @@ func p1(x uint32) uint32 {
 // GB/T 32905 5
 // -----------------------------------------------------------------------------
 
+// Init 5.1
+func Init() *Context {
+	var ctx Context
+	for i := 0; i < 8; i++ {
+		ctx.state[i] = iv[i]
+	}
+	return &ctx
+}
+
 // Padding 5.2 填充
 func Padding(message []byte) []byte {
 	msgLen := len(message)
