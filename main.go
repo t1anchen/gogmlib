@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/t1anchen/gogmlib/sm3"
+	"github.com/t1anchen/gogmlib/utils"
 	"github.com/urfave/cli"
 )
 
@@ -37,9 +38,14 @@ func main() {
 					Name:  "compute",
 					Usage: "使用 sm3 哈希值计算",
 					Action: func(c *cli.Context) error {
-						for _, v := range c.Args() {
-							hashStr := sm3.NewContext().ComputeFromString(v).ToHexString()
-							fmt.Printf("%s* %s\n", hashStr, v)
+						if len(c.Args()) < 1 {
+							msgBuf := utils.ReadBytesFromStdinToBuffer()
+							fmt.Printf("%s *stdin\n", sm3.NewContext().ComputeFromBytes(msgBuf.Bytes()).ToHexString())
+						} else {
+							for _, v := range c.Args() {
+								hashStr := sm3.NewContext().ComputeFromString(v).ToHexString()
+								fmt.Printf("%s *%s\n", hashStr, v)
+							}
 						}
 						return nil
 					},

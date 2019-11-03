@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
+	"os"
 )
 
 // WordsToBytes 字slice转化成网络流
@@ -34,4 +36,20 @@ func BytesConcat(a ...[]byte) []byte {
 		buf.Write(x)
 	}
 	return buf.Bytes()
+}
+
+func ReadBytesFromFileToBuffer(f *os.File) *bytes.Buffer {
+	msgBuf := new(bytes.Buffer)
+	block := make([]byte, 4096)
+	r := bufio.NewReader(f)
+	loaded, err := r.Read(block)
+	for err == nil {
+		msgBuf.Write(block[:loaded])
+		loaded, err = r.Read(block)
+	}
+	return msgBuf
+}
+
+func ReadBytesFromStdinToBuffer() *bytes.Buffer {
+	return ReadBytesFromFileToBuffer(os.Stdin)
 }

@@ -17,6 +17,8 @@ import (
 type Context struct {
 	state  [8]uint32
 	buffer [16]uint32
+	w      [68]uint32
+	wp     [64]uint32
 }
 
 // -----------------------------------------------------------------------------
@@ -162,16 +164,12 @@ func (ctx *Context) CompressFunction(w *[68]uint32, wp *[64]uint32) {
 
 // ComputeFromBytes 总过程
 func (ctx *Context) ComputeFromBytes(message []byte) *Context {
-	var (
-		w  [68]uint32
-		wp [64]uint32
-	)
 	padded := bytes.NewBuffer(Padding(message))
 	blockBuf := bytes.NewBuffer(padded.Next(64))
 	for blockBuf.Len() > 0 {
 		binary.Read(blockBuf, binary.BigEndian, &ctx.buffer)
-		ctx.MessageExpansion(&w, &wp)
-		ctx.CompressFunction(&w, &wp)
+		ctx.MessageExpansion(&ctx.w, &ctx.wp)
+		ctx.CompressFunction(&ctx.w, &ctx.wp)
 		blockBuf = bytes.NewBuffer(padded.Next(64))
 	}
 	return ctx
