@@ -33,7 +33,7 @@ func (ctx *Context) Size() int {
 
 // BlockSize 实现 Hash 接口中的 BlockSize 函数
 func (ctx *Context) BlockSize() int {
-	return 64
+	return BlockSizeInByte
 }
 
 // Write 实现 Hash 接口中的 Write 方法（来自 io.Writer）

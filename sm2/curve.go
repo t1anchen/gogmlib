@@ -59,6 +59,8 @@ type Curve struct {
 	A         *big.Int
 }
 
+var sm2P256 Curve
+
 // Init 初始化曲线
 func Init(A *big.Int, RInverse *big.Int, givenCurveParams *elliptic.CurveParams) *Curve {
 	var sm2P256 Curve
@@ -81,4 +83,19 @@ func InitWithRecommendedParams() *Curve {
 			Gx:      utils.NewBigIntFromHexString("32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7"),
 			Gy:      utils.NewBigIntFromHexString("BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0"),
 			BitSize: 256})
+}
+
+func init() {
+	sm2P256 = *InitWithRecommendedParams()
+}
+
+func GetSm2P256() Curve {
+	return sm2P256
+}
+
+func IsPointInfinity(x, y *big.Int) bool {
+	if x.Sign() == 0 && y.Sign() == 0 {
+		return true
+	}
+	return false
 }

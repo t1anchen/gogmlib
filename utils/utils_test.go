@@ -64,3 +64,16 @@ expected=%s
 actual=%s`, expected, actual)
 	}
 }
+
+func TestHexStringToBytes(t *testing.T) {
+	input := "31323334353637383132333435363738"
+	actual := HexStringToBytes(input)
+	expected := []byte{
+		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
+		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
+	if bytes.Equal(actual, expected) != true {
+		t.Errorf(`utils:TestHexStringToBytes
+expected=%s
+actual=%s`, expected, actual)
+	}
+}
