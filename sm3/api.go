@@ -22,7 +22,7 @@ func (ctx *Context) Reset() {
 
 // Sum 实现 Hash 接口中的 Sum 函数
 func (ctx *Context) Sum(inputStream []byte) []byte {
-	return ctx.ComputeFromBytes(inputStream).ToBytes()
+	return ctx.ToBytes()
 }
 
 // Size 实现 Hash 接口中的 Size 函数
@@ -35,7 +35,7 @@ func (ctx *Context) BlockSize() int {
 	return 64
 }
 
-// Write 实现 Hash 接口中 io.Writer 接口的 Write 函数
+// Write 实现 Hash 接口中的 Write 方法（来自 io.Writer）
 func (ctx *Context) Write(newChunk []byte) (int, error) {
 	ctx.ComputeFromBytes(newChunk)
 	return len(newChunk), nil

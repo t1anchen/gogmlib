@@ -1,20 +1,28 @@
 package sm2
 
-import (
-	"testing"
-)
+// func TestSignAndVerify(t *testing.T) {
+// 	msg := []byte("abc")
+// 	t.Logf("msg = %x", msg)
+// 	priv, err := GenKey(rand.Reader)
+// 	if err != nil {
+// 		panic("GenerateKey failed")
+// 	}
+// 	t.Logf("priv = %+v", priv)
 
-var (
-	p []uint = []uint{0x8542D698, 0x4C044F18, 0xE8B92435, 0xBF6FF7DE, 0x45728191}
-)
+// 	hfunc := sm3.New()
+// 	hfunc.Write(msg)
+// 	hash := hfunc.Sum(nil)
+// 	t.Logf("hash(msg) = %x", hash)
 
-func TestContextToString(t *testing.T) {
-	c := Context{}
-	actual := c.ToString()
-	expected := "Hello, World"
-	if actual != expected {
-		t.Errorf(`ToString 测试失败
-期望值=%s
-实际值=%s`, expected, actual)
-	}
-}
+// 	sigBytes, err := priv.Sign(rand.Reader, hash)
+// 	var sig Signature
+// 	asn1.Unmarshal(sigBytes, &sig)
+// 	t.Logf("sig(msg) = %+v", sig)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+
+// 	pk := priv.PK()
+// 	ret := pk.Verify(msg, sigBytes)
+// 	fmt.Println(ret)
+// }

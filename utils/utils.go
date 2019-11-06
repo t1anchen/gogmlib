@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"fmt"
+	"math/big"
 	"os"
 )
 
@@ -52,4 +54,32 @@ func ReadBytesFromFileToBuffer(f *os.File) *bytes.Buffer {
 
 func ReadBytesFromStdinToBuffer() *bytes.Buffer {
 	return ReadBytesFromFileToBuffer(os.Stdin)
+}
+
+func BigIntToBytes(x *big.Int) []byte {
+	return x.Bytes()
+}
+
+func NewBigIntFromHexString(s string) *big.Int {
+	x, err := new(big.Int).SetString(s, 16)
+	if err == false {
+		return nil
+	}
+	return x
+}
+
+func NewBigIntFromBytes(b []byte) *big.Int {
+	return new(big.Int).SetBytes(b)
+}
+
+func NewBigIntFromOne() *big.Int {
+	return new(big.Int).SetInt64(1)
+}
+
+func NewBigIntFromZero() *big.Int {
+	return new(big.Int).SetInt64(0)
+}
+
+func BigIntToHexString(x *big.Int) string {
+	return fmt.Sprintf("%x", x.Bytes())
 }
