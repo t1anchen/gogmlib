@@ -9,16 +9,24 @@ import (
 	"github.com/t1anchen/gogmlib/utils"
 )
 
+const (
+	BlockSizeInByte = 16
+)
+
 // -----------------------------------------------------------------------------
 // 数据结构
 // -----------------------------------------------------------------------------
 
 // Context 杂凑过程上下文
 type Context struct {
-	state  [8]uint32
-	buffer [16]uint32
-	w      [68]uint32
-	wp     [64]uint32
+	state     [8]uint32
+	buffer    [16]uint32
+	w         [68]uint32
+	wp        [64]uint32
+	xBuf      [4]byte
+	xBufOff   int32
+	xOff      int32
+	byteCount int64
 }
 
 // -----------------------------------------------------------------------------
@@ -88,10 +96,19 @@ func NewContext() *Context {
 
 // Init 5.1
 func (ctx *Context) Init() *Context {
+	ctx.byteCount = 0
+	ctx.xBufOff = 0
+
+	for i := 0; i < len(ctx.xBuf); i++ {
+		ctx.xBuf[i] = 0
+	}
 	for i := 0; i < 8; i++ {
 		ctx.state[i] = iv[i]
 	}
-	ctx.buffer = [16]uint32{0}
+	for i := 0; i < len(ctx.w); i++ {
+		ctx.w[i] = 0
+	}
+	ctx.xOff = 0
 	return ctx
 }
 
@@ -173,6 +190,99 @@ func (ctx *Context) ComputeFromBytes(message []byte) *Context {
 		blockBuf = bytes.NewBuffer(padded.Next(64))
 	}
 	return ctx
+}
+
+func (ctx *Context) processBlock() *Context {
+	ctx.MessageExpansion(&ctx.w, &ctx.wp)
+	ctx.CompressFunction(&ctx.w, &ctx.wp)
+	ctx.xOff = 0
+	return ctx
+}
+
+func (ctx *Context) Update(payload []byte) (n int, err error) {
+	payloadLen := len(payload)
+	i := 0
+	if ctx.xBufOff != 0 {
+		for i < payloadLen {
+			ctx.xBuf[ctx.xBufOff] = payload[i]
+			ctx.xBufOff++
+			i++
+			if ctx.xBufOff == 4 {
+				ctx.processWord(ctx.xBuf[:], 0)
+				ctx.xBufOff = 0
+				break
+			}
+		}
+	}
+
+	limit := ((payloadLen - i) & ^3) + i
+	for ; i < limit; i += 4 {
+		ctx.processWord(payload, int32(i))
+	}
+
+	for i < payloadLen {
+		ctx.xBuf[ctx.xBufOff] = payload[i]
+		ctx.xBufOff++
+		i++
+	}
+
+	ctx.byteCount += int64(payloadLen)
+
+	n = payloadLen
+	return
+}
+
+func (ctx *Context) processWord(wordBuf []byte, offset int32) {
+	n := binary.BigEndian.Uint32(wordBuf[offset : offset+4])
+
+	ctx.buffer[ctx.xOff] = n
+	ctx.xOff++
+
+	if ctx.xOff >= 16 {
+		ctx.processBlock()
+	}
+}
+
+func (ctx *Context) processLength(bitLength int64) {
+	if ctx.xOff > (BlockSizeInByte - 2) {
+		ctx.buffer[ctx.xOff] = 0
+		ctx.xOff++
+
+		ctx.processBlock()
+	}
+
+	for ; ctx.xOff < (BlockSizeInByte - 2); ctx.xOff++ {
+		ctx.buffer[ctx.xOff] = 0
+	}
+
+	ctx.buffer[ctx.xOff] = uint32(bitLength >> 32)
+	ctx.xOff++
+	ctx.buffer[ctx.xOff] = uint32(bitLength)
+	ctx.xOff++
+}
+
+func (ctx *Context) finish() {
+	bitLength := ctx.byteCount << 3
+
+	ctx.Write([]byte{128})
+
+	for ctx.xBufOff != 0 {
+		ctx.Write([]byte{0})
+	}
+
+	ctx.processLength(bitLength)
+
+	ctx.processBlock()
+}
+
+func (ctx *Context) checkSum() [32]byte {
+	ctx.finish()
+	vlen := len(ctx.state)
+	var out [32]byte
+	for i := 0; i < vlen; i++ {
+		binary.BigEndian.PutUint32(out[i*4:(i+1)*4], ctx.state[i])
+	}
+	return out
 }
 
 // ComputeFromString 以 string 输入

@@ -11,7 +11,6 @@ import (
 // New 生成杂凑上下文实例
 func New() hash.Hash {
 	c := NewContext()
-	c.Reset()
 	return c
 }
 
@@ -22,7 +21,9 @@ func (ctx *Context) Reset() {
 
 // Sum 实现 Hash 接口中的 Sum 函数
 func (ctx *Context) Sum(inputStream []byte) []byte {
-	return ctx.ToBytes()
+	digest := ctx
+	h := digest.checkSum()
+	return append(inputStream, h[:]...)
 }
 
 // Size 实现 Hash 接口中的 Size 函数
@@ -37,6 +38,5 @@ func (ctx *Context) BlockSize() int {
 
 // Write 实现 Hash 接口中的 Write 方法（来自 io.Writer）
 func (ctx *Context) Write(newChunk []byte) (int, error) {
-	ctx.ComputeFromBytes(newChunk)
-	return len(newChunk), nil
+	return ctx.Update(newChunk)
 }
