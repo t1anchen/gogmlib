@@ -280,6 +280,17 @@ func (pk *PubKey) VerifyFromBigInt(userID []byte, msg []byte, r, s *big.Int) boo
 	return expectedR.Cmp(r) == 0
 }
 
+// VerifyFromASN1DER 验证签名
+func (pk *PubKey) VerifyFromASN1DER(userID []byte, msg []byte, sigBytes []byte) bool {
+	sig := new(Signature)
+	_, err := asn1.Unmarshal(sigBytes, sig)
+	if err != nil {
+		fmt.Errorf("%s", err)
+		return false
+	}
+	return pk.VerifyFromBigInt(userID, msg, sig.R, sig.S)
+}
+
 // -----------------------------------------------------------------------------
 // ietf/draft-shen-sm2-ecdsa-02 6 密钥交换协议
 // -----------------------------------------------------------------------------
