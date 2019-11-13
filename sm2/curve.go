@@ -7,25 +7,11 @@ import (
 	"github.com/t1anchen/gogmlib/utils"
 )
 
-// FieldType 曲线所在域类型
-type FieldType int
-
-const (
-	_ FieldType = iota
-
-	// PrimeField 素域
-	PrimeField
-
-	// BinaryField 二元扩域
-	BinaryField
-)
-
 // Curve 曲线和曲线参数 3.1
 type Curve struct {
 	*elliptic.CurveParams
-	fieldType FieldType
-	RInverse  *big.Int
-	A         *big.Int
+	RInverse *big.Int
+	A        *big.Int
 }
 
 var sm2P256 Curve
