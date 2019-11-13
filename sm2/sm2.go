@@ -1,11 +1,13 @@
 package sm2
 
 import (
+	"bytes"
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/asn1"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -49,8 +51,8 @@ type Signature struct {
 	R, S *big.Int
 }
 
-// Cipher 密文
-type Cipher struct {
+// ASN1DERCipher 密文
+type ASN1DERCipher struct {
 	X, Y *big.Int
 	C3   []byte
 	C2   []byte
@@ -110,7 +112,10 @@ func (sk *PrivKey) ToBytes() []byte {
 // ietf/draft-shen-sm2-ecdsa-02 5 数字签名算法
 // -----------------------------------------------------------------------------
 
-var sm2SignDefaultUserID = utils.HexStringToBytes("31323334353637383132333435363738")
+var (
+	sm2H                 = utils.NewBigIntFromOne()
+	sm2SignDefaultUserID = utils.HexStringToBytes("31323334353637383132333435363738")
+)
 
 // GenKey 生成密钥对
 func GenKey(rand io.Reader) (*PrivKey, *PubKey, error) {
@@ -329,6 +334,148 @@ func kdf(hashProvider hash.Hash, zX, zY *big.Int, msg []byte) {
 // -----------------------------------------------------------------------------
 // ietf/draft-shen-sm2-ecdsa-02 7 公开密钥加密
 // -----------------------------------------------------------------------------
+
+func isNotEncrypted(encData []byte, in []byte) bool {
+	encDataLen := len(encData)
+	for i := 0; i != encDataLen; i++ {
+		if encData[i] != in[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (pk *PubKey) Encrypt(msg []byte) ([]byte, error) {
+	c2 := make([]byte, len(msg))
+	copy(c2, msg)
+	var c1 []byte
+	digest := sm3.New()
+	var kPBx, kPBy *big.Int
+	for {
+		k, err := pickK(rand.Reader, pk.Curve.N)
+		if err != nil {
+			return nil, err
+		}
+		kBytes := k.Bytes()
+		c1x, c1y := pk.Curve.ScalarBaseMult(kBytes)
+		c1 = elliptic.Marshal(pk.Curve, c1x, c1y)
+		kPBx, kPBy = pk.Curve.ScalarMult(pk.X, pk.Y, kBytes)
+		kdf(digest, kPBx, kPBy, c2)
+
+		if !isNotEncrypted(c2, msg) {
+			break
+		}
+	}
+
+	digest.Reset()
+	digest.Write(kPBx.Bytes())
+	digest.Write(msg)
+	digest.Write(kPBy.Bytes())
+	c3 := digest.Sum(nil)
+
+	c1Len := len(c1)
+	c2Len := len(c2)
+	c3Len := len(c3)
+	result := make([]byte, c1Len+c2Len+c3Len)
+	copy(result[:c1Len], c1)
+	copy(result[c1Len:c1Len+c2Len], c2)
+	copy(result[c1Len+c2Len:], c3)
+	return result, nil
+
+}
+
+func (sk *PrivKey) Decrypt(in []byte) ([]byte, error) {
+	c1Len := ((sk.Curve.BitSize+7)/8)*2 + 1
+	c1 := make([]byte, c1Len)
+	copy(c1, in[:c1Len])
+	c1x, c1y := elliptic.Unmarshal(sk.Curve, c1)
+	sx, sy := sk.Curve.ScalarMult(c1x, c1y, sm2H.Bytes())
+	if IsPointInfinity(sx, sy) {
+		return nil, errors.New("[h]C1 at infinity")
+	}
+	c1x, c1y = sk.Curve.ScalarMult(c1x, c1y, sk.D.Bytes())
+
+	digest := sm3.New()
+	c3Len := digest.Size()
+	c2Len := len(in) - c1Len - c3Len
+	c2 := make([]byte, c2Len)
+	copy(c2, in[c1Len:c1Len+c2Len])
+	kdf(digest, c1x, c1y, c2)
+
+	digest.Reset()
+	digest.Write(c1x.Bytes())
+	digest.Write(c2)
+	digest.Write(c1y.Bytes())
+	c3 := digest.Sum(nil)
+
+	if !bytes.Equal(c3, in[c1Len+c2Len:]) {
+		return nil, errors.New("invalid cipher text")
+	}
+	return c2, nil
+}
+
+func MarshalEncryptedToASN1DER(in []byte) ([]byte, error) {
+	paramLen := utils.BitsLenToBytesLen(sm2P256.Params().BitSize)
+
+	c1x := make([]byte, paramLen)
+	c1y := make([]byte, paramLen)
+	c2Len := len(in) - (1 + paramLen*2) - sm3.DigestSizeInByte
+	c2 := make([]byte, c2Len)
+	c3 := make([]byte, sm3.DigestSizeInByte)
+	pos := 1
+
+	copy(c1x, in[pos:pos+paramLen])
+	pos += paramLen
+
+	copy(c1y, in[pos:pos+paramLen])
+	pos += paramLen
+
+	copy(c2, in[pos:pos+c2Len])
+	pos += c2Len
+
+	copy(c3, in[pos:pos+sm3.DigestSizeInByte])
+
+	nc1x := utils.NewBigIntFromBytes(c1x)
+	nc1y := utils.NewBigIntFromBytes(c1y)
+	result, err := asn1.Marshal(ASN1DERCipher{nc1x, nc1y, c3, c2})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func UnmarshalEncryptedFromASN1DER(in []byte) ([]byte, error) {
+	encrypted := new(ASN1DERCipher)
+	_, err := asn1.Unmarshal(in, encrypted)
+	if err != nil {
+		return nil, err
+	}
+
+	c1x := utils.BigIntToBytes(encrypted.X)
+	c1y := utils.BigIntToBytes(encrypted.Y)
+	c1xLen := len(c1x)
+	c1yLen := len(c1y)
+	c2Len := len(encrypted.C2)
+	c3Len := len(encrypted.C3)
+	result := make([]byte, 1+c1xLen+c1yLen+c2Len+c3Len)
+	pos := 0
+
+	result[pos] = UnCompressed
+	pos++
+
+	copy(result[pos:pos+c1xLen], c1x)
+	pos += c1xLen
+
+	copy(result[pos:pos+c1yLen], c1y)
+	pos += c1yLen
+
+	copy(result[pos:pos+c2Len], encrypted.C2)
+	pos += c2Len
+
+	copy(result[pos:pos+c3Len], encrypted.C3)
+
+	return result, nil
+}
 
 // -----------------------------------------------------------------------------
 // golang package 本身

@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	BlockSizeInByte = 16
+	BlockSizeInByte  = 16
+	DigestSizeInByte = 32
 )
 
 // -----------------------------------------------------------------------------

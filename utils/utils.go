@@ -152,3 +152,8 @@ func BigIntAnd(x, y *big.Int) *big.Int {
 	z.And(x, y)
 	return &z
 }
+
+// BitLenToBytesLen 比特流长度转字节流长度
+func BitsLenToBytesLen(bitlen int) int {
+	return (bitlen + 7) >> 3
+}

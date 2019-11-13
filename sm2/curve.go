@@ -20,37 +20,6 @@ const (
 	BinaryField
 )
 
-// const (
-// 	bottom28Bits = 0xFFFFFFF
-// 	bottom29Bits = 0x1FFFFFFF
-// )
-
-// // FieldElement 域元素
-// type FieldElement [9]uint32
-
-// func (X *FieldElement) FromBigInt(curve *Curve, a *big.Int) {
-// 	x := new(big.Int).Lsh(a, 257)
-// 	x.Mod(x, curve.P)
-// 	for i := 0; i < 9; i++ {
-// 		if bits := x.Bits(); len(bits) > 0 {
-// 			X[i] = uint32(bits[0]) & bottom29Bits
-// 		} else {
-// 			X[i] = 0
-// 		}
-// 		x.Rsh(x, 29)
-// 		i++
-// 		if i == 9 {
-// 			break
-// 		}
-// 		if bits := x.Bits(); len(bits) > 0 {
-// 			X[i] = uint32(bits[0]) & bottom28Bits
-// 		} else {
-// 			X[i] = 0
-// 		}
-// 		x.Rsh(x, 28)
-// 	}
-// }
-
 // Curve 曲线和曲线参数 3.1
 type Curve struct {
 	*elliptic.CurveParams

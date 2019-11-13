@@ -1,7 +1,9 @@
 package sm2
 
 import (
+	"bytes"
 	"crypto/rand"
+	"fmt"
 	"testing"
 
 	"github.com/t1anchen/gogmlib/utils"
@@ -61,4 +63,77 @@ func TestSignToASN1DER(t *testing.T) {
 
 	actualResult := pk.VerifyFromASN1DER(nil, msg, sigBytes)
 	t.Logf("actualResult:%v", actualResult)
+}
+
+func TestEncrypt(t *testing.T) {
+	msg := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	sk, pk, err := GenKey(rand.Reader)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	encrypted, err := pk.Encrypt(msg)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	fmt.Printf("cipher text:%x\n", encrypted)
+
+	plain, err := sk.Decrypt(encrypted)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	fmt.Printf("plain text:%x\n", plain)
+
+	if !bytes.Equal(msg, plain) {
+		t.Errorf("加解密失败，msg=%x 不等于 plain=%x", msg, plain)
+		return
+	}
+
+}
+
+func TestEncryptWithASN1DER(t *testing.T) {
+	src := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	sk, pk, err := GenKey(rand.Reader)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	cipherText, err := pk.Encrypt(src)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	fmt.Printf("cipher text:%x\n", cipherText)
+
+	derCipher, err := MarshalEncryptedToASN1DER(cipherText)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	//err = ioutil.WriteFile("derCipher.dat", derCipher, 0644)
+	//if err != nil {
+	//	t.Error(err.Error())
+	//	return
+	//}
+	cipherText, err = UnmarshalEncryptedFromASN1DER(derCipher)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	plainText, err := sk.Decrypt(cipherText)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	fmt.Printf("plain text:%x\n", plainText)
+
+	if !bytes.Equal(src, plainText) {
+		t.Errorf("加解密失败，msg=%x 不等于 plain=%x", src, plainText)
+		return
+	}
 }
