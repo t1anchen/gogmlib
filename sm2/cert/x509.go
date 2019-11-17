@@ -79,7 +79,7 @@ type certificateRequest struct {
 }
 
 // MarshalPKIXPublicKey 将公钥序列化成一个 PKIX 的公钥
-func MarshalPKIXPublicKey(pub interface{}) ([]byte, error) {
+func MarshalPKIXPublicKey(pub *sm2.PubKey) ([]byte, error) {
 	var publicKeyBytes []byte
 	var publicKeyAlgorithm pkix.AlgorithmIdentifier
 	var err error
