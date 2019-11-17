@@ -6,6 +6,6 @@ github.com/russross/blackfriday/v2
 github.com/shurcooL/sanitized_anchor_name
 # github.com/urfave/cli v1.22.1
 github.com/urfave/cli
-# golang.org/x/crypto v0.0.0-20191112222119-e1110fd1c708
+# golang.org/x/crypto v0.0.0-20191117063200-497ca9f6d64f
 golang.org/x/crypto/cryptobyte
 golang.org/x/crypto/cryptobyte/asn1
