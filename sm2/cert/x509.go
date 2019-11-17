@@ -57,6 +57,12 @@ type publicKeyInfo struct {
 	PublicKey asn1.BitString
 }
 
+// 满足 RFC 3280 标准中的 SubjectPublicKeyInfo 公钥结构
+type pkixPublicKey struct {
+	Algo pkix.AlgorithmIdentifier
+	BitString asn1.BitString
+}
+
 type tbsCertificateRequest struct {
 	Raw           asn1.RawContent
 	Version       int
@@ -70,6 +76,28 @@ type certificateRequest struct {
 	TBSCSR             tbsCertificateRequest
 	SignatureAlgorithm pkix.AlgorithmIdentifier
 	SignatureValue     asn1.BitString
+}
+
+// MarshalPKIXPublicKey 将公钥序列化成一个 PKIX 的公钥
+func MarshalPKIXPublicKey(pub interface{}) ([]byte, error) {
+	var publicKeyBytes []byte
+	var publicKeyAlgorithm pkix.AlgorithmIdentifier
+	var err error
+
+	if publicKeyBytes, publicKeyAlgorithm, err = marshalPublicKey(pub); err != nil {
+		return nil, err
+	}
+
+	pkix := pkixPublicKey {
+		Algo: publicKeyAlgorithm,
+		BitString: asn1.BitString{
+			Bytes: publicKeyBytes,
+			BitLength: 8 * len(publicKeyBytes),
+		},
+	}
+
+	ret, _ := asn1.Marshal(pkix)
+	return ret, nil
 }
 
 func CreateCertificateRequest(template *x509.CertificateRequest, pub *sm2.PubKey,
