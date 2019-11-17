@@ -59,7 +59,7 @@ type publicKeyInfo struct {
 
 // pkixPublicKey 满足 RFC 3280 标准中的 SubjectPublicKeyInfo 公钥结构
 type pkixPublicKey struct {
-	Algo pkix.AlgorithmIdentifier
+	Algo      pkix.AlgorithmIdentifier
 	BitString asn1.BitString
 }
 
@@ -88,10 +88,10 @@ func MarshalPKIXPublicKey(pub *sm2.PubKey) ([]byte, error) {
 		return nil, err
 	}
 
-	pkix := pkixPublicKey {
+	pkix := pkixPublicKey{
 		Algo: publicKeyAlgorithm,
 		BitString: asn1.BitString{
-			Bytes: publicKeyBytes,
+			Bytes:     publicKeyBytes,
 			BitLength: 8 * len(publicKeyBytes),
 		},
 	}
@@ -1008,6 +1008,8 @@ type TBSCertificate tbsCertificate
 // just an empty SEQUENCE.
 var emptyASN1Subject = []byte{0x30, 0}
 
+// CreateCertificateInfo 创建证书信息
+//
 // 为什么要将构建CertificateInfo和签发证书分开呢?
 // 是因为实际应用中的CA密钥大多数都是放在加密卡/加密机中的，签名由加密卡/加密机来完成
 func CreateCertificateInfo(template, parent *x509.Certificate, csr *x509.CertificateRequest) (*TBSCertificate, error) {
