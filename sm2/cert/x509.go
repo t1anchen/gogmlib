@@ -57,7 +57,7 @@ type publicKeyInfo struct {
 	PublicKey asn1.BitString
 }
 
-// 满足 RFC 3280 标准中的 SubjectPublicKeyInfo 公钥结构
+// pkixPublicKey 满足 RFC 3280 标准中的 SubjectPublicKeyInfo 公钥结构
 type pkixPublicKey struct {
 	Algo pkix.AlgorithmIdentifier
 	BitString asn1.BitString
